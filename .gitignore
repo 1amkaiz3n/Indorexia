@@ -30,3 +30,7 @@ logs/
 
 # Node
 node_modules/
+
+
+supabase-schema.sql
+
