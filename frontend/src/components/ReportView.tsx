@@ -23,25 +23,33 @@ export default function ReportView({ report: r }: Props) {
       {/* ===== ROW 1: Keputusan Bisnis | Ringkasan Eksekutif | SWOT ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Keputusan Bisnis */}
-        <div className={`rounded-2xl border shadow-sm p-5 ${
-          dc.verdict === 'GO' ? 'bg-gradient-to-br from-emerald-700 to-emerald-900 text-white' :
-          dc.verdict === 'CAUTION' ? 'bg-gradient-to-br from-amber-700 to-amber-900 text-white' :
-          'bg-gradient-to-br from-rose-700 to-rose-900 text-white'
+        <div className={`rounded-2xl border-2 shadow-sm p-5 bg-white dark:bg-gray-900 ${
+          dc.verdict === 'GO' ? 'border-emerald-500' :
+          dc.verdict === 'CAUTION' ? 'border-amber-500' :
+          'border-rose-500'
         }`}>
-          <p className="text-white/80 text-xs font-semibold uppercase tracking-wider">Keputusan Bisnis</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Keputusan Bisnis</p>
           <div className="flex items-center gap-2 mt-1">
-            <FontAwesomeIcon icon={dc.verdict === 'GO' ? faCircleCheck : dc.verdict === 'CAUTION' ? faTriangleExclamation : faCircleXmark} className="text-white text-xl" />
-            <p className="text-2xl font-bold mt-1">{dc.verdict_label.replace(/^[✅⚠️❌]\s*/, '')}</p>
+            <FontAwesomeIcon icon={dc.verdict === 'GO' ? faCircleCheck : dc.verdict === 'CAUTION' ? faTriangleExclamation : faCircleXmark} className={`text-xl ${
+              dc.verdict === 'GO' ? 'text-emerald-600' :
+              dc.verdict === 'CAUTION' ? 'text-amber-600' :
+              'text-rose-600'
+            }`} />
+            <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">{dc.verdict_label.replace(/^[✅⚠️❌]\s*/, '')}</p>
           </div>
-          <p className="text-white text-xs mt-0.5">Confidence: {dc.confidence}%</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Confidence: {dc.confidence}%</p>
           <div className="flex gap-3 mt-3">
-            <div><p className="text-lg font-bold">{dc.opportunity_score}</p><p className="text-[10px] text-white/80">Peluang</p></div>
-            <div><p className="text-lg font-bold">{dc.saturation_score}</p><p className="text-[10px] text-white/80">Kejenuhan</p></div>
-            <div><p className="text-lg font-bold">{bs.overall}</p><p className="text-[10px] text-white/80">Skor</p></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{dc.opportunity_score}</p><p className="text-[10px] text-gray-500 dark:text-gray-400">Peluang</p></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{dc.saturation_score}</p><p className="text-[10px] text-gray-500 dark:text-gray-400">Kejenuhan</p></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{bs.overall}</p><p className="text-[10px] text-gray-500 dark:text-gray-400">Skor</p></div>
           </div>
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {dc.reasons_go.map((r, i) => <span key={i} className="bg-black/20 text-white text-[10px] px-2 py-1 rounded-full">{r}</span>)}
-            {dc.reasons_caution.map((r, i) => <span key={i} className="bg-black/20 text-white/90 text-[10px] px-2 py-1 rounded-full">{r}</span>)}
+            {dc.reasons_go.map((r, i) => <span key={i} className={`text-[10px] px-2 py-1 rounded-full ${
+              dc.verdict === 'GO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+              dc.verdict === 'CAUTION' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+              'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+            }`}>{r}</span>)}
+            {dc.reasons_caution.map((r, i) => <span key={i} className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] px-2 py-1 rounded-full">{r}</span>)}
           </div>
         </div>
 
@@ -309,46 +317,75 @@ export default function ReportView({ report: r }: Props) {
         </div>
       </div>
 
-      {/* ===== ROW 4: Peluang | Risiko | Rekomendasi ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* ===== ROW 4: Peluang + Risiko (2 kolom) ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="rounded-2xl border bg-white dark:bg-gray-900 shadow-sm p-5">
           <h2 className="text-base font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
             <FontAwesomeIcon icon={faLightbulb} className="text-emerald-500" />
             Analisis Peluang
           </h2>
-          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{ai.opportunity_analysis || 'Belum cukup data untuk analisis peluang.'}</p>
+          <div className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{ai.opportunity_analysis || 'Belum cukup data untuk analisis peluang.'}</div>
         </div>
         <div className="rounded-2xl border bg-white dark:bg-gray-900 shadow-sm p-5">
           <h2 className="text-base font-bold text-rose-700 dark:text-rose-400 mb-3 flex items-center gap-2">
             <FontAwesomeIcon icon={faTriangleExclamation} className="text-rose-500" />
             Analisis Risiko
           </h2>
-          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{ai.risk_analysis || 'Belum cukup data untuk analisis risiko.'}</p>
+          <div className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{ai.risk_analysis || 'Belum cukup data untuk analisis risiko.'}</div>
         </div>
-        <div className="rounded-2xl border bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-gray-900 shadow-sm p-5">
+      </div>
+
+      {/* ===== ROW 5: Rekomendasi + Rencana Tindakan (2 kolom) ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="rounded-2xl border bg-white dark:bg-gray-900 shadow-sm p-5">
           <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
             <FontAwesomeIcon icon={faBullseye} className="text-amber-500" />
             Rekomendasi
           </h2>
-          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{ai.recommendation || 'Belum cukup data untuk rekomendasi.'}</p>
+          <div className="space-y-3">
+            {(ai.recommendation || '').split('\n\n').filter(Boolean).map((block, i) => {
+              const fields: Record<string, string> = {}
+              for (const line of block.split('\n')) {
+                const m = line.match(/^\s*-\s*\*\*([^*]+)\*\*:\s*(.*)/)
+                if (m) {
+                  const key = m[1].trim().toLowerCase().replace(/\s+/g, '_')
+                  fields[key] = m[2].trim()
+                }
+              }
+              return (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border p-3.5">
+                  {fields.tindakan && <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{fields.tindakan}</p>}
+                  {fields.alasan && <p className="text-xs text-gray-600 dark:text-gray-400 mb-1"><span className="font-medium text-gray-700 dark:text-gray-300">Alasan:</span> {fields.alasan}</p>}
+                  {fields.data_pendukung && <p className="text-xs text-gray-500 dark:text-gray-400 mb-1"><span className="font-medium text-gray-600 dark:text-gray-400">Data:</span> {fields.data_pendukung}</p>}
+                  {fields.dampak && <p className="text-xs text-emerald-600 dark:text-emerald-400"><span className="font-medium">Dampak:</span> {fields.dampak}</p>}
+                </div>
+              )
+            }) || <p className="text-sm text-gray-500 dark:text-gray-400">Belum cukup data untuk rekomendasi.</p>}
+          </div>
         </div>
-      </div>
-
-      {/* ===== ROW 5: Action Plan ===== */}
-      <div className="rounded-2xl border bg-white dark:bg-gray-900 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <FontAwesomeIcon icon={faCalendarDays} className="text-violet-600" />
-          Rencana Tindakan 30 Hari
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {dc.action_plan.map((a, i) => (
-            <div key={i} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border p-3.5">
-              <div className="inline-block bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-xs font-semibold px-2.5 py-1 rounded-full mb-2">{a.phase}</div>
-              <ul className="space-y-1">
-                {a.tasks.map((t, j) => <li key={j} className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-1.5"><FontAwesomeIcon icon={faCheck} className="text-violet-500 mt-0.5" /> {t}</li>)}
-              </ul>
-            </div>
-          ))}
+        <div className="rounded-2xl border bg-white dark:bg-gray-900 shadow-sm p-5">
+          <h2 className="text-base font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+            <FontAwesomeIcon icon={faCalendarDays} className="text-violet-600" />
+            Rencana Tindakan 30 Hari
+          </h2>
+          <div className="space-y-4">
+            {dc.action_plan.map((a, i) => (
+              <div key={i}>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30 px-3 py-1 rounded-md">{a.phase}</span>
+                  <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                </div>
+                <div className="space-y-1.5">
+                  {a.tasks.map((t, j) => (
+                    <div key={j} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                      <svg className="w-3.5 h-3.5 text-violet-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      {t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
