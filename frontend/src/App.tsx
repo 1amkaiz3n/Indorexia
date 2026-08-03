@@ -1,21 +1,25 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ResearchReport } from './types'
 import { doResearch, fetchReport } from './lib/api'
 import { saveLastReport, getLastReport, getLastMeta } from './lib/storage'
 import ResearchForm from './components/ResearchForm'
 import ReportView from './components/ReportView'
+import ResearchProgress from './components/ResearchProgress'
 import Navbar from './components/Navbar'
 import HistoryPage from './components/HistoryPage'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTriangleExclamation, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { faTriangleExclamation, faMagnifyingGlass, faCircleCheck } from '@fortawesome/free-solid-svg-icons'
 
 function App() {
   const [page, setPage] = useState('research')
   const [report, setReport] = useState<ResearchReport | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
+  const [completed, setCompleted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [, setReportId] = useState<string | null>(null)
+  const progressKey = useRef(0)
 
   // Recover last report on mount
   useEffect(() => {
@@ -32,16 +36,24 @@ function App() {
 
   const handleResearch = useCallback(async (q: string, loc?: string) => {
     setLoading(true)
+    setShowProgress(true)
+    setCompleted(false)
     setError(null)
     setReport(null)
     setReportId(null)
     setQuery(q)
     setPage('research')
+    progressKey.current = Date.now()
     try {
       const res = await doResearch(q, loc)
       const data = res.report as ResearchReport
       const id = res.id as string
+      setCompleted(true)
+      setLoading(false)
+      setShowProgress(false)
+      await new Promise(r => setTimeout(r, 800))
       setReport(data)
+      setCompleted(false)
       setReportId(id)
       saveLastReport(data, {
         id,
@@ -53,8 +65,9 @@ function App() {
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
-    } finally {
       setLoading(false)
+      setShowProgress(false)
+      setCompleted(false)
     }
   }, [])
 
@@ -97,18 +110,18 @@ function App() {
               <ResearchForm onSubmit={handleResearch} loading={loading} query={query} />
             </div>
 
-            {loading && (
-              <div className="mx-auto mt-8 max-w-6xl px-6 space-y-6">
-                <div className="grid grid-cols-5 gap-3">
-                  {[1,2,3,4,5].map(i => <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />)}
-                </div>
-                <div className="h-32 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />
-                <div className="grid grid-cols-3 gap-5">
-                  {[1,2,3].map(i => <div key={i} className="h-64 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />)}
-                </div>
-                <div className="flex items-center justify-center gap-3 text-sm text-gray-500 dark:text-gray-400 py-4">
-                  <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-violet-500" />
-                  Mengumpulkan & menganalisis data pasar...
+            {showProgress && !completed && !report && (
+              <ResearchProgress key={progressKey.current} query={query} />
+            )}
+
+            {completed && !report && !loading && (
+              <div className="mx-auto mt-8 max-w-xl px-6">
+                <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/10 p-8 text-center">
+                  <div className="mx-auto mb-3 w-14 h-14 flex items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500">
+                    <FontAwesomeIcon icon={faCircleCheck} className="text-2xl" />
+                  </div>
+                  <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">Analisis Selesai</p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-300 mt-1">Menyiapkan hasil analisis...</p>
                 </div>
               </div>
             )}
@@ -126,12 +139,12 @@ function App() {
             )}
 
             {report && !loading && (
-              <div className="mt-8">
+              <div className="mt-8 animate-fadeIn">
                 <ReportView report={report} />
               </div>
             )}
 
-            {!report && !loading && !error && (
+            {!report && !loading && !error && !showProgress && !completed && (
               <div className="mx-auto mt-24 max-w-md text-center px-6">
                 <div className="mx-auto mb-6 w-16 h-16 flex items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-900/30 text-violet-500">
                   <FontAwesomeIcon icon={faMagnifyingGlass} className="text-2xl" />

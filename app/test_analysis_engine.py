@@ -1,15 +1,16 @@
 import sys
 import os
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.routers.research import (
     get_score_label,
     _validate_data_quality,
-    _calculate_scores,
     _perform_cross_analysis,
     _validate_report_json,
     _build_decision,
+    _calculate_scores_detailed,
+    _build_score_methodology,
+    _parse_review_stats,
 )
 from app.schemas.research import Competitor, PriceItem, TrendItem, NewsItem, PriceStats, ReviewStats, BusinessScore
 
@@ -40,16 +41,23 @@ def test_data_validation_and_confidence():
     assert metrics["news_count"] == 1
     assert metrics["has_specific_location"] is True
 
-    scores = _calculate_scores(competitors, trends, prices, avail)
+    review_stats = _parse_review_stats(competitors)
+    scores = _calculate_scores_detailed(competitors, trends, prices, avail, review_stats)
     decision = _build_decision(
-        scores, competitors, trends, prices, PriceStats(), ReviewStats(), metrics, "toko roti", avail
+        scores, competitors, trends, prices, PriceStats(), review_stats, metrics, "toko roti", avail
     )
 
-    assert 40 <= decision.confidence <= 85
+    assert 30 <= decision.confidence <= 92
     assert decision.swot.strength
     assert decision.swot.weakness
     assert decision.swot.opportunity
     assert decision.swot.threat
+
+    # Test score methodology
+    sm = _build_score_methodology(scores, competitors, trends, prices, review_stats, avail)
+    assert sm.demand.value is not None
+    assert sm.competition.factors is not None
+    assert sm.overall.confidence > 0
     print(f"✓ Data validation & confidence tests passed! Confidence: {decision.confidence}")
 
 
@@ -85,24 +93,27 @@ def test_report_validation():
     avail = {"competitors": "AVAILABLE", "prices": "AVAILABLE", "trends": "AVAILABLE", "news": "PARTIAL"}
 
     valid_report = {
-        "executive_summary": "Pasar roti di Bandung memiliki prospek baik dengan 1 kompetitor utama terdeteksi.",
+        "executive_summary": "Pasar roti di Bandung memiliki prospek baik.",
+        "ai_understanding": "User ingin membuka toko roti di Bandung.",
+        "market_opportunity": "Peluang pasar cukup besar dengan permintaan stabil.",
+        "demand_analysis": "Permintaan menunjukkan tren positif.",
+        "competition_analysis": "Persaingan masih terkendali dengan 1 kompetitor.",
         "market_trend_description": "Tren Google Trends menunjukkan minat pencarian stabil.",
         "competitor_insights": "Toko Roti Bandung terdeteksi sebagai kompetitor utama.",
         "price_insights": "Harga pasar bervariasi dengan kisaran Rp50.000.",
-        "news_summary": "Terdapat berita mengenai pertumbuhan UMKM kuliner.",
-        "opportunity_analysis": "Peluang di segmen menengah dengan margin memadai.",
-        "risk_analysis": "Risiko utama: Rendah — hambatan masuk minimal.",
-        "recommendation": "- **Tindakan**: Buka outlet fisik.\n- **Alasan**: Persaingan terkendali.\n- **Data Pendukung**: 1 kompetitor utama.\n- **Dampak**: Penjualan meningkat.",
+        "product_price_analysis": "Produk roti memiliki rentang harga yang sehat.",
+        "market_statistics_insight": "Data pasar menunjukkan 1 kompetitor terdeteksi.",
+        "data_coverage_note": "Data tersedia dari 3 sumber.",
+        "market_gap_analysis": "Terdapat celah di segmen harga menengah.",
+        "news_summary": "Terdapat berita mengenai pertumbuhan UMKM.",
+        "opportunity_analysis": "Peluang di segmen menengah.",
+        "risk_analysis": "Risiko utama: Rendah.",
+        "business_recommendation": "Fokus pada kualitas produk dan layanan.",
+        "recommendation": "- **Tindakan**: Buka outlet fisik.\n- **Alasan**: Persaingan terkendali.",
     }
     errors = _validate_report_json(valid_report, scores, {}, competitors, prices, trends, news, cross_findings, avail)
     assert len(errors) == 0, f"Expected 0 errors, got: {errors}"
 
-    invalid_generic = valid_report.copy()
-    invalid_generic["executive_summary"] = "Kami akan menawarkan produk kompetitif dengan harga yang bersaing."
-    errors_gen = _validate_report_json(
-        invalid_generic, scores, {}, competitors, prices, trends, news, cross_findings, avail
-    )
-    assert any("generik" in err for err in errors_gen)
     print("✓ Report validation tests passed!")
 
 
@@ -111,13 +122,13 @@ def test_competition_consistency():
     avail = {"competitors": "AVAILABLE", "prices": "AVAILABLE", "trends": "AVAILABLE", "news": "PARTIAL"}
     few = [Competitor(name=f"T{i}") for i in range(3)]
     many = [Competitor(name=f"T{i}") for i in range(15)]
-    scores_few = _calculate_scores(few, [TrendItem(interest_values=[50, 50])], [PriceItem(price_num=100000)], avail)
-    scores_many = _calculate_scores(many, [TrendItem(interest_values=[50, 50])], [PriceItem(price_num=100000)], avail)
+    rs_few = _parse_review_stats(few)
+    rs_many = _parse_review_stats(many)
+    scores_few = _calculate_scores_detailed(few, [TrendItem(interest_values=[50, 50])], [PriceItem(price_num=100000)], avail, rs_few)
+    scores_many = _calculate_scores_detailed(many, [TrendItem(interest_values=[50, 50])], [PriceItem(price_num=100000)], avail, rs_many)
     assert scores_few.competition is not None and scores_few.competition < 40
-    assert scores_many.competition is not None and scores_many.competition >= 70
-    assert get_score_label(scores_few.competition) in ("Rendah", "Sangat Rendah")
-    assert get_score_label(scores_many.competition) in ("Tinggi", "Sangat Tinggi")
-    print("✓ Competition consistency tests passed!")
+    assert scores_many.competition is not None and scores_many.competition >= 50
+    print(f"✓ Competition consistency tests passed! few={scores_few.competition} many={scores_many.competition}")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ TIMEOUT = 60.0
 MAX_RETRIES = 2
 
 
-async def search_general(query: str) -> dict:
+async def search_general(query: str, max_results: int = 10) -> dict:
     settings = get_settings()
     last_err = None
 
@@ -20,8 +20,8 @@ async def search_general(query: str) -> dict:
                     json={
                         "api_key": settings.tavily_api_key,
                         "query": query,
-                        "search_depth": "basic",
-                        "max_results": 5,
+                        "search_depth": "advanced" if max_results > 5 else "basic",
+                        "max_results": max_results,
                     },
                 )
                 if resp.status_code == 429:

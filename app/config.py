@@ -3,8 +3,6 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    supabase_url: str = ""
-    supabase_key: str = ""
     serpapi_api_key: str = ""
     tavily_api_key: str = ""
     groq_api_key: str = ""

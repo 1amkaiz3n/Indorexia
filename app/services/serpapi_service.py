@@ -44,17 +44,20 @@ async def _request(url: str, params: dict, desc: str) -> dict:
     return {"error": last_err or "Unknown error"}
 
 
-async def search_google(query: str, location: str | None = None) -> dict:
+async def search_google(query: str, location: str | None = None, num: int = 20, start: int = 0) -> dict:
     settings = get_settings()
-    params = _params(settings.serpapi_api_key, q=query, engine="google", num=20)
+    params = _params(settings.serpapi_api_key, q=query, engine="google", num=num, start=start)
     if location:
         params["location"] = location
-    return await _request("https://serpapi.com/search", params, f"Google search [{query}]")
+    return await _request("https://serpapi.com/search", params, f"Google search [{query}] start={start}")
 
 
-async def google_trends(query: str) -> dict:
+async def google_trends(query: str, location: str | None = None) -> dict:
     settings = get_settings()
     params = _params(settings.serpapi_api_key, q=query, engine="google_trends", data_type="TIMESERIES")
+    if location:
+        # Use location code if available, but for now just pass as location
+        params["location"] = location
     return await _request("https://serpapi.com/search", params, f"Google Trends [{query}]")
 
 
